@@ -1,8 +1,15 @@
+## nvidia
+```
+sudo docker run --rm -it --gpus all --ipc=host --shm-size=192G -v $pwd:/workspace nvcr.io/nvidia/pytorch:24.12-py3
+```
+
 ## install
 
 ```
 pip install torch numpy transformers datasets tiktoken wandb tqdm
 ```
+
+
 
 ## reproducing GPT-2
 
