@@ -15,7 +15,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from flash_attn import flash_attn_func
+if torch.cuda.is_available() and 'MI3' in torch.cuda.get_device_name():
+    from flash_attn import flash_attn_func
 
 
 class LayerNorm(nn.Module):
@@ -65,13 +66,15 @@ class CausalSelfAttention(nn.Module):
         if torch.cuda.is_available() and 'MI3' not in torch.cuda.get_device_name():
             # efficient attention using Flash Attention CUDA kernels
             y = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=None, dropout_p=self.dropout if self.training else 0, is_causal=True)
+            y = y.transpose(1, 2).contiguous().view(B, T, C) # re-assemble all head outputs side by side
         else:
+            # same implementation as AMD
+            # https://github.com/AMD-AIG-AIMA/pytorch-training-benchmark/blob/main/llama.py#L94-L104
             q = q.transpose(1, 2).contiguous()
             k = k.transpose(1, 2).contiguous()
             v = v.transpose(1, 2).contiguous()
             y = flash_attn_func(q,k,v,dropout_p=self.dropout if self.training else 0, causal=True)
-
-        y = y.transpose(1, 2).contiguous().view(B, T, C) # re-assemble all head outputs side by side
+            y = y.contiguous().view(B, T, C) # re-assemble all head outputs side by side
 
         # output projection
         y = self.resid_dropout(self.c_proj(y))

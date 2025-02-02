@@ -4,7 +4,7 @@
 
 wandb_log = True
 wandb_project = 'owt'
-wandb_run_name='gpt2-124M'
+wandb_run_name='rocm-pytorch-training:v25.2'
 
 # these make the total batch size be ~0.5M
 # 60 batch size * 1024 block size * 8 GPUs = 491,520
